@@ -1,0 +1,38 @@
+---
+title: "GMKF_CLOnly_denovos_scRNAseq"
+output: html_document
+---
+```{r}
+library(denovolyzeR)
+library(dplyr)
+library(reshape2)
+library("readxl")
+library(tidyverse)
+```
+
+```{r}
+#importing excel file
+df <- read_excel("GMKF_CLOnly_denovos_scRNAseq_PASS_annotated_noMonomorphic.hg38_multianno.xlsx")
+
+# filter for exonic only
+df2 <- df %>% 
+  filter(Func.refGene == "exonic"| Func.refGene == "exonic;UTR5" | Func.refGene == "exonic;UTR3")
+df2
+```
+
+```{r}
+# denovolyzer by gene, input gene, class, number of samples
+
+gene_denovo_chart <- denovolyzeByGene(genes = df2$Gene.refGene, 
+                 classes = df2$ExonicFunc.refGene, 
+                 nsamples = 1)
+gene_denovo_chart
+```
+
+```{r}
+denovolyzeByGene(genes = df2$Gene.refGene, 
+                 classes = df2$ExonicFunc.refGene, 
+                 nsamples = 80)
+```
+
+

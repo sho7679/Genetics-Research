@@ -1,0 +1,102 @@
+---
+title: "CP_Denovolyzer_singlecell"
+output: html_document
+---
+```{r}
+library(denovolyzeR)
+library(dplyr)
+library(reshape2)
+library("readxl")
+library(tidyverse)
+```
+
+```{r}
+df <- read_xlsx("GMKF_CPOnly_denovos_scRNAseq_PASS_noMonomorphicVar_annotated.hg38_multianno.xlsx")
+```
+```{r}
+df2<- df %>%
+  filter(Func.refGene == "exonic") 
+df2[df2 == "nonsynonymous SNV"] <- "mis"
+df2
+```
+
+```{r}
+denovo1<- denovolyzeByGene(genes = df2$Gene.refGene, 
+                 classes = df2$ExonicFunc.refGene, 
+                 nsamples = 58)
+denovo1
+#write.csv(denovo1, "CP_singlecell_Denovolyzer_Results.csv")
+```
+
+
+## Cluster 1
+```{r}
+d1 <- read_excel("GMKF_CPOnly_denovos_scRNAseq_no6and12_PASS_noMonomorphicVar_annotated.hg38_multianno.xlsx", sheet = "Cluster 1")
+```
+
+```{r}
+# by class
+cluster1 <- denovolyzeByClass(genes = d1$Gene.refGene, 
+                 classes = d1$Class, 
+                 nsamples = 58)
+cluster1
+```
+```{r}
+#by gene
+cluster1_gene <- denovolyzeByGene(genes = d1$Gene.refGene, 
+                 classes = d1$Class, 
+                 nsamples = 58)
+cluster1_gene
+```
+
+## Cluster 2
+```{r}
+d2 <- read_excel("GMKF_CPOnly_denovos_scRNAseq_no6and12_PASS_noMonomorphicVar_annotated.hg38_multianno.xlsx", sheet = "Cluster 2_4")
+```
+
+
+```{r}
+#byClass
+cluster2 <- denovolyzeByClass(genes = d2$Gene.refGene, 
+                 classes = d2$Class, 
+                 nsamples = 58)
+cluster2
+```
+```{r}
+#by Gene
+cluster2_gene <- denovolyzeByGene(genes = d1$Gene.refGene, 
+                 classes = d1$Class, 
+                 nsamples = 58)
+cluster2_gene
+```
+## There were no exonic variants in cluster 3_8
+
+## Cluster 5
+```{r}
+d5 <- read_excel("GMKF_CPOnly_denovos_scRNAseq_no6and12_PASS_noMonomorphicVar_annotated.hg38_multianno.xlsx", sheet = "Cluster 5")
+```
+
+
+```{r}
+# by class
+cluster5 <- denovolyzeByClass(genes = d5$Gene.refGene, 
+                 classes = d5$Class, 
+                 nsamples = 58)
+cluster5
+```
+
+```{r}
+# by gene
+cluster5_gene <- denovolyzeByGene(genes = d1$Gene.refGene, 
+                 classes = d1$Class, 
+                 nsamples = 58)
+cluster5_gene
+```
+
+
+
+
+
+
+
+
