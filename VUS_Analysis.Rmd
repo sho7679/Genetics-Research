@@ -1,0 +1,466 @@
+---
+title: "VUS Analysis"
+output: html_document
+---
+##Samantha Ho 
+##Leslie Lab 
+##Fall 2021 
+##VUS analysis 
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(readxl)
+library(waffle)
+```
+
+# boxplot of VUS per ChildID 
+```{r}
+boxdf <- read_excel("boxplot input.xlsx")
+boxdf
+```
+
+```{r}
+#make boxplot 
+ggplot(boxdf, aes( x ="", y=VUS)) +
+  geom_boxplot()+
+  geom_point() +
+  xlab("")
+
+#make violin plot 
+ggplot(boxdf, aes(x = "", y = VUS)) +
+  geom_violin()+
+  xlab("")
+```
+#boxplot comparing case vs. control
+```{r}
+df3 <- read_excel("boxplot_gene.xlsx")
+df3
+```
+
+```{r}
+# VUS frequency in cases vs control
+ggplot(df3, aes(x = Population, y = VUS)) +
+  geom_boxplot() +
+  geom_point() 
+
+```
+
+
+# look at VUS by exonic function
+```{r}
+exonic <- read_excel("VUSexonic.xlsx", sheet = 1) #removed the intronic splicing variants
+exonic
+```
+
+```{r}
+exonicfunc <- exonic %>%
+  group_by(Exonic) %>%
+  count()
+
+exonicfunc
+
+#pie chart
+ggplot(exonicfunc, aes(x="", y=n, fill=Exonic)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void()
+```
+
+```{r}
+# LoF vs. missense 
+exonicfun2 <- exonicfunc
+
+
+exonicfun2$Exonic[exonicfun2$Exonic == "nonframeshift deletion"] <-"Missense"
+exonicfun2$Exonic[exonicfun2$Exonic == "nonframeshift insertion"] <-"Missense"
+exonicfun2$Exonic[exonicfun2$Exonic == "nonsynonymous SNV;synonymous SNV"] <-"Missense"
+exonicfun2$Exonic[exonicfun2$Exonic == "nonsynonymous SNV"] <-"Missense"
+exonicfun2$Exonic[exonicfun2$Exonic == "unknown"] <-"Missense"
+
+exonicfun2$Exonic[exonicfun2$Exonic == "frameshift deletion"] <-"LoF"
+exonicfun2$Exonic[exonicfun2$Exonic == "frameshift insertion"] <-"LoF"
+exonicfun2$Exonic[exonicfun2$Exonic == "stopgain"] <-"LoF"
+exonicfun2$Exonic[exonicfun2$Exonic == "stopgain;synonymous SNV"] <-"LoF"
+exonicfun2$Exonic[exonicfun2$Exonic == "stoploss"] <-"LoF"
+
+
+exonicfun2
+
+```
+
+```{r}
+#get percentages of LoF and missense 
+exonicfun3 <-exonicfun2 %>%
+  group_by(Exonic) %>%
+  summarise(n = sum(n))%>%
+  mutate(percent = n/sum(n)*100)
+
+exonicfun3
+
+# make pie chart 
+ggplot(exonicfun3, aes(x="", y=n, fill=Exonic)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void()+
+  geom_text(aes(label = percent), position = position_stack(vjust = 0.5))
+
+
+```
+
+```{r}
+# make waffle plot version 
+waffledata <- c(LoF = 5, Missense = 95)
+waffledata
+
+waffle(waffledata, colors = c("#FC4E2A", "#FFEDA0"))
+```
+
+#look at case vs control LoF/missense distribution 
+```{r}
+case_exonic <- read_excel("VUSexonic.xlsx", sheet = 2)
+control_exonic <- read_excel("VUSexonic.xlsx", sheet = 3)
+```
+
+```{r}
+#convert to LoF or missense 
+case_exonic2<- case_exonic
+highpath<- control_exonic
+
+case_exonic2$Exonic[case_exonic2$Exonic == "nonframeshift deletion"] <-"Missense"
+case_exonic2$Exonic[case_exonic2$Exonic == "nonframeshift insertion"] <-"Missense"
+case_exonic2$Exonic[case_exonic2$Exonic == "nonsynonymous SNV;synonymous SNV"] <-"Missense"
+case_exonic2$Exonic[case_exonic2$Exonic == "nonsynonymous SNV"] <-"Missense"
+case_exonic2$Exonic[case_exonic2$Exonic == "unknown"] <-"Missense"
+
+case_exonic2$Exonic[case_exonic2$Exonic == "frameshift deletion"] <-"LoF"
+case_exonic2$Exonic[case_exonic2$Exonic == "frameshift insertion"] <-"LoF"
+case_exonic2$Exonic[case_exonic2$Exonic == "stopgain"] <-"LoF"
+case_exonic2$Exonic[case_exonic2$Exonic == "stopgain;synonymous SNV"] <-"LoF"
+case_exonic2$Exonic[case_exonic2$Exonic == "stoploss"] <-"LoF"
+
+highpath$Exonic[highpath$Exonic == "nonframeshift deletion"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "nonframeshift insertion"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "nonsynonymous SNV;synonymous SNV"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "nonsynonymous SNV"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "unknown"] <-"Missense"
+
+highpath$Exonic[highpath$Exonic == "frameshift deletion"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "frameshift insertion"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "stopgain"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "stopgain;synonymous SNV"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "stoploss"] <-"LoF"
+```
+
+```{r}
+#get counts 
+case3 <- case_exonic2 %>%
+  group_by(Exonic) %>%
+  count()
+
+control3 <-highpath %>%
+  group_by(Exonic) %>%
+  count()
+
+# find percentages 
+case4 <-case3%>%
+  group_by(Exonic) %>%
+  summarise(n = sum(n))%>%
+  mutate(percent = n/sum(n)*100)
+
+control4 <- control3 %>%
+  group_by(Exonic) %>%
+  summarise(n = sum(n))%>%
+  mutate(percent = n/sum(n)*100)
+
+control4$percent
+
+case4$percent <- c(4.57, 95.44)
+control4$percent <- c(5.37, 94.63)
+
+
+case5 <- case4 %>% 
+  mutate(csum = rev(cumsum(rev(percent))), 
+         pos = percent/2 + lead(csum, 1),
+         pos = if_else(is.na(pos), percent/2, pos))
+
+control5 <- control4 %>% 
+  mutate(csum = rev(cumsum(rev(percent))), 
+         pos = percent/2 + lead(csum, 1),
+         pos = if_else(is.na(pos), percent/2, pos))
+```
+
+```{r}
+# pie charts 
+
+library(ggrepel)
+
+ggplot(case5, aes(x = "" , y = percent, fill = fct_inorder(Exonic))) +
+  geom_col(width = 1, color = 1) +
+  coord_polar(theta = "y") +
+  scale_fill_brewer(palette = "Pastel1") +
+  geom_label_repel(data = case5,
+                   aes(y = pos, label = paste0(percent, "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
+  guides(fill = guide_legend(title = "Group")) +
+  theme_void() +
+  ggtitle("Case VUS Exonic function")
+
+
+ggplot(control5, aes(x = "" , y = percent, fill = fct_inorder(Exonic))) +
+  geom_col(width = 1, color = 1) +
+  coord_polar(theta = "y") +
+  scale_fill_brewer(palette = "Pastel1") +
+  geom_label_repel(data = control5,
+                   aes(y = pos, label = paste0(percent, "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
+  guides(fill = guide_legend(title = "Group")) +
+  theme_void() +
+  ggtitle("Control VUS Exonic function")
+
+```
+
+
+# Genes with Pathogenic Variants: VUS variants vs. Pathogenic variants by exonic function 
+```{r}
+#read in data
+all_df <- read_excel("Path_VUS_genes.xlsx") #info on all VUS and pathogenic variants
+genes <- read_excel("GenesWPath.xlsx") #list of 51 genes with pathogenic variants
+```
+
+```{r}
+#convert to vector
+Vgene <- genes$Gene
+size <- genes$Size
+
+
+#subset for all_df in genes
+highpath <- all_df %>%
+  filter(Gene %in% Vgene)
+
+```
+
+```{r}
+#change to LoF vs. missense
+highpath$Exonic[highpath$Exonic == "nonframeshift deletion"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "nonframeshift insertion"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "nonsynonymous SNV;synonymous SNV"] <-"Missense"
+highpath$Exonic[highpath$Exonic == "nonsynonymous SNV"] <-"Missense"
+
+highpath$Exonic[highpath$Exonic == "frameshift deletion"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "frameshift insertion"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "stopgain"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "stopgain;synonymous SNV"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "stoploss"] <-"LoF"
+highpath$Exonic[highpath$Exonic == "."] <-"LoF"
+
+highpath
+```
+
+```{r}
+#combine Classification and Exonic function
+highpath$category <- paste(highpath$Exonic, highpath$Class)
+
+#merging gene size into data
+highpath2 <-highpath %>% full_join(genes)
+highpath2
+```
+
+```{r}
+#make bar plot data
+bar_cat_df <- highpath2 %>%
+  group_by(category, Gene, Size) %>%
+  count()
+bar_cat_df
+```
+
+```{r}
+#make barplot 
+ggplot(bar_cat_df, aes(fill = category, x = reorder(Gene, -Size), y = n)) + 
+  geom_bar(stat = "identity")+ 
+  scale_fill_manual(values = c("#C70039", "#397AF2", "#FF5733", "#88BCF7"))+
+  ylab("Frequency")+
+  xlab("Gene")+
+  ggtitle("Freqency of Variants by Function and Consequence in Genes with Pathogenic Variants")+
+  guides(fill = guide_legend(title = "Variant Classification"))+ 
+  theme_bw() + 
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))+ 
+  theme(axis.text.x=element_text(angle = -50, hjust = 0))
+```
+
+
+```{r}
+# inherited vs. denovo 
+highpath2$inherit <- paste(highpath2$Inheritance, highpath2$Class)
+
+bar_inher_df <- highpath2 %>%
+  group_by(Gene, inherit, Size) %>%
+  count()
+bar_inher_df
+```
+
+```{r}
+# make barplot 
+ggplot(bar_inher_df, aes(fill = inherit, x = Gene, y = n)) + #reorder(Gene, -Size) to order by gene size 
+  geom_bar(stat = "identity")+ 
+  scale_fill_manual(values = c("#C70039", "#FF5733", "#397AF2"))+
+  ylab("Frequency")+
+  xlab("Gene")+
+  ggtitle("Freqency of Variants by Inheritance Pattern and Consequence in Genes with Pathogenic Variants")+
+  guides(fill = guide_legend(title = "Variant Type"))+ 
+  theme_bw() + 
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))+ 
+  theme(axis.text.x=element_text(angle = -50, hjust = 0))
+
+```
+
+# Lollipop plot for pathogenic genes: ARHGAP29, CTNND1, COL2A1
+```{r}
+library(devtools)
+library(g3viz)
+library(dplyr)         
+library(tidyr)          
+library(ggplot2)
+```
+
+```{r}
+#import CSV data 
+mutation1.csv <-file.path(file = "VUS_lollipop_Input.csv")
+```
+
+```{r}
+#changed Stop_Gain to Nonsense_Mutation
+mutation1.dat <- readMAF(mutation1.csv,
+                        gene.symbol.col = "Hugo_Symbol",
+                        variant.class.col = "Mutation_Type",
+                        protein.change.col = "Protein_Change",
+                        sep = ",")
+```
+
+```{r}
+#ARHGAP29 VUS 
+g3Lollipop(mutation1.dat,
+           gene.symbol = "ARHGAP29",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = g3Lollipop.theme(theme.name = "ggplot2", title.text = "ARHGAP29"),
+           output.filename = "ARHGAP29")
+```
+
+
+```{r}
+#CTNND1 VUS
+g3Lollipop(mutation1.dat,
+           gene.symbol = "CTNND1",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = g3Lollipop.theme(theme.name = "ggplot2", title.text = "CTNND1"),
+           output.filename = "CTNND1")
+```
+
+
+```{r}
+#COL2A1 VUS 
+g3Lollipop(mutation1.dat,
+           gene.symbol = "COL2A1",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = g3Lollipop.theme(theme.name = "ggplot2", title.text = "COL2A1"),
+           output.filename = "COL2A1")
+```
+
+## GGplot lollipop version with pathogenic vs. VUS 
+```{r}
+library(readxl)
+col2 <- read_excel("VUSPath_input.xlsx", sheet = 2)
+arg <- read_excel("VUSPath_input.xlsx", sheet = 3)
+ctd <- read_excel("VUSPath_input.xlsx", sheet = 4)
+
+arg
+
+#get number of mutations per position
+col2_1<- col2 %>%
+  group_by(Position) %>%
+  mutate(count = n()) %>%
+  ungroup()
+
+arg2<- arg %>%
+  group_by(Position) %>%
+  mutate(count = n()) %>%
+  ungroup()
+
+ctd2<- ctd %>%
+  group_by(Position) %>%
+  mutate(count = n()) %>%
+  ungroup()
+
+#flip axis for pathogenic 
+col2_2 <-col2_1 %>%
+  transform(count = ifelse(Consequence == "Pathogenic", count*-1, count))
+
+arg3 <-arg2 %>%
+  transform(count = ifelse(Consequence == "Pathogenic", count*-1, count))
+
+ctd3 <-ctd2 %>%
+  transform(count = ifelse(Consequence == "Pathogenic", count*-1, count))
+
+col2_2$Position <- as.integer(col2_2$Position)
+arg3$Position <- as.integer(arg3$Position)
+ctd3$Position <- as.integer(ctd3$Position)
+
+
+  
+```
+
+```{r}
+# plot lollipop graphs
+col2_plot<- ggplot(col2_2, aes(x=Position, y = count, color = Consequence)) + 
+  geom_segment(aes(x = Position, xend = Position, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5, aes(shape = Mutation_Type))+
+  labs(title = "VUS vs. Pathogenic variants in COL2A1", y = "# of Variants", x = "Amino Acid Position", color = "Consequence")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+arg_plot<- ggplot(arg3, aes(x=Position, y = count, color = Consequence)) + 
+  geom_segment(aes(x = Position, xend = Position, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5, aes(shape = Mutation_Type))+
+  labs(title = "VUS vs. Pathogenic variants in ARHGAP29", y = "# of Variants", x = "Amino Acid Position", color = "Consequence")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+ctd_plot<- ggplot(ctd3, aes(x=Position, y = count, color = Consequence)) + 
+  geom_segment(aes(x = Position, xend = Position, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5, aes(shape = Mutation_Type))+
+  labs(title = "VUS vs. Pathogenic variants in CTNND1", y = "# of Variants", x = "Amino Acid Position", color = "Consequence")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+col2_plot
+arg_plot
+ctd_plot
+
+
+```
+
+
+
+
+
+
+
+
