@@ -1,0 +1,110 @@
+---
+title: "gene ontology"
+output: html_document
+---
+```{r}
+library(BiocManager)
+library(topGO)
+library(readxl)
+library(ALL)
+```
+
+```{r}
+genes <- read_xlsx("geneList.xlsx")
+genesNames <- genes
+genesNames
+```
+
+```{r}
+myG <- genesNames
+geneList <-factor(as.integer(genesNames %in% myG))
+names(geneList) <- genesNames
+str(geneList)
+```
+
+```{r}
+geneID2GO <-read.table("geneList.txt", header = FALSE)
+geneUniverse <-names(geneID2GO)
+genesofinterest <-read.table("geneList.txt", header = FALSE)
+genesofinterest <-as.character(genesofinterest$V1)
+geneList <- factor(as.integer(geneUniverse %in% genesofinterest))
+names(geneList) <- geneUniverse
+```
+
+
+```{r}
+GOdata<- new("topGOdata", ontology = "MF", allGenes = geneList, annot = annFUN.gene2GO, gene2GO = geneID2GO)
+```
+
+
+
+```{r}
+affyLib <- paste(annotation(ALL), "db", sep = ".")
+library(package = affyLib, character.only = TRUE)
+data(geneList)
+sum(topDiffGenes(geneList))
+```
+```{r}
+sampleGOdata<- new("topGOdata", 
+                   description = "Simple session", ontology = "BP",
+                   allGenes = geneList, geneSe1 = topDiffGenes,
+                   nodeSize = 10,
+                   annot = annFUN, affyLib = affyLib)
+```
+
+# Visegoa 
+```{r}
+library(ViSEAGO)
+```
+
+```{r}
+# load genes background
+background<-scan(
+    "reference.txt",
+    quiet=TRUE,
+    what=""
+)
+
+# load gene selection
+selection<-scan(
+    "geneList.txt",
+    quiet=TRUE,
+    what=""
+)
+
+background <- read_excel("reference.xlsx")
+background
+background$gene<-as.character(background$gene)
+background$pvalue<-as.character(background$pvalue)
+
+```
+
+```{r}
+Bioconductor<-ViSEAGO::Bioconductor2GO()
+ViSEAGO::available_organisms(Bioconductor)
+BiocManager::install("org.Hs.eg.db")
+```
+
+```{r}
+myGENE2GO<-ViSEAGO::annotate(
+    "org.Hs.eg.db",
+    Bioconductor
+)
+```
+
+```{r}
+# create topGOdata for BP
+BP<-ViSEAGO::create_topGOdata(
+    geneSel=selection,
+    allGenes=background,
+    gene2GO=myGENE2GO, 
+    ont="BP",
+    nodeSize=5
+)
+```
+
+
+
+
+
+
