@@ -1,0 +1,141 @@
+---
+title: "denovolzyer"
+output: html_document
+---
+# Set up 
+```{r}
+# install in console
+install.packages("denovolyzeR")
+install.packages("dplyr","reshape")
+```
+
+```{r}
+# library them 
+library(denovolyzeR)
+library(dplyr)
+library(reshape2)
+```
+
+```{r}
+# importing excel gene and class table
+library("readxl")
+denovo <- read_excel("denovolyzer_input.xlsx")
+
+
+denovo
+
+```
+
+
+# Using Ware "Interpreting de novo Variation in Human Disease using denovolyzeR"
+
+## Protocol 1. Assessing the genome-wide burden of denovo variants 
+```{r}
+denovolyzeByClass(genes = denovo$gene, 
+                  classes = denovo$class, 
+                  nsamples = 80) # number of samples (kids)
+# returns observed and expected number of variants; enrichment (oberved/expected), and pValue 
+
+# no significant p-values...
+```
+
+## Protocol 2. Assessing the number of genes with multiple de novo variants 
+- occurrence of multiple de novos in a single gene may show that the gene is causal
+- first, need to asses the total number of genes that have multiple de novos
+
+```{r}
+denovolyzeMultiHits(genes = denovo$gene, 
+                    classes = denovo$class, 
+                    nsamples = 80, 
+                    nperms = 500) # number of permutations run
+
+# Given nVars variants in a set of genes, how many genes are expected to contain more than one variant? Do we observe more than this?
+
+# no significant p-vlaues...
+```
+
+## Protocol 3. Assessing Frequency of denovo in individual genes 
+- do any genes have an excess of denovos 
+
+```{r}
+gene_denovo_chart <- denovolyzeByGene(genes = denovo$gene, 
+                 classes = denovo$class, 
+                 nsamples = 80) 
+gene_denovo_chart
+```
+
+```{r}
+# Only genes with multiples
+lof_genes <- denovolyzeByGene(genes = denovo$gene, 
+                 classes = denovo$class, 
+                 nsamples = 89) %>%
+  subset(lof_observed==1) # subset of genes with a loss of function mutation 
+
+lof_genes
+# 10 genes 
+```
+
+## Protocol 4. Assessing a pre-specified gene set
+- does a set of genes collectively show an enrichment of denovos
+- any of the previous analyses can be restricted using "includeGenes" argument
+- used if a smaller panel of genes have been sequenced
+
+# Finding the 4 genes that are missing 
+
+```{r}
+probTabel<-viewProbabilityTable()
+
+check <- denovo$gene %in% probTabel$geneName
+
+check
+probTabel
+```
+
+```{r}
+# found the 4 missing values 
+which(check == FALSE)
+denovo$gene[28] #DNAAF4
+denovo$gene[36] #FOXI3
+denovo$gene[20] #CRYBG1
+denovo$gene[33] #ELOC
+```
+
+```{r}
+# can't find FOXI3
+probTabel[which(probTabel$ensgID == "ENSG00000112297"),]
+probTabel[which(probTabel$geneName == "Forkhead Box I3"),]
+```
+
+# Making the pie chart
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library("readxl")
+pie_data <- read_excel("pie_chart_input_data.xlsx")
+pie_data
+
+```
+
+```{r}
+slices<- pie_data$number
+lbls <- pie_data$Class
+pct <- round(slices/sum(slices)*100)
+
+lbls <- paste(pie_data$Class) # add percents to labels
+lbls <- paste(lbls, pct,sep=" (") # add percents to labels 
+lbls <- paste(lbls,"%)",sep="") # ad % to labels 
+cols <- c("#f06c69","#ed4946","#E92622","gray","#50b0e4","#72c0e9","#94cfef","#b6def4","#6A7F93")
+
+
+pie(slices,labels = lbls, col = cols)
+
+
+```
+
+
+
+
+
+
+
