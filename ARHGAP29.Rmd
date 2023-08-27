@@ -1,0 +1,308 @@
+---
+title: "ARHGAP lollipop"
+output: html_document
+---
+#libraries
+```{r}
+library(devtools)
+library(g3viz)
+library(dplyr)          # for data manipulation
+library(tidyr)          # for data tidying
+library(ggplot2)
+```
+
+#ARHGAP29_clinvar_pathogenic_uncertain.csv
+```{r}
+#import CSV data 
+mutation1.csv <-file.path(file = "ARHGAP29_clinvar_pathogenic_uncertain.csv")
+```
+
+```{r}
+plot.options <- g3Lollipop.theme(theme.name = "ggplot2",
+                                  title.text = "ARHGAP29 (Clinvar pathogenic uncertain)")
+
+#changed Stop_Gain to Nonsense_Mutation
+mutation1.dat <- readMAF(mutation1.csv,
+                        gene.symbol.col = "Hugo_Symbol",
+                        variant.class.col = "Mutation_Type",
+                        protein.change.col = "Protein_Change",
+                        sep = ",")
+```
+
+```{r}
+g3Lollipop(mutation1.dat,
+           gene.symbol = "ARHGAP29",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = plot.options,
+           output.filename = "ARHGAP29_clinvar_plot")
+```
+
+#ARHGAP29_gnomad.csv
+```{r}
+mutation2.csv <-file.path(file = "ARHGAP29_gnomad copy.csv")
+plot.options2 <- g3Lollipop.theme(theme.name = "ggplot2",
+                                  title.text = "ARHGAP29 (gnomad)")
+
+#changed Splice_Region to Splice_Site, Start_Lost to Start_Codon_Del
+mutation2.dat <- readMAF(mutation2.csv,
+                        gene.symbol.col = "Hugo_Symbol",
+                        variant.class.col = "Mutation_Type",
+                        protein.change.col = "Protein_Change",
+                        sep = ",")
+```
+
+```{r}
+g3Lollipop(mutation2.dat,
+           gene.symbol = "ARHGAP29",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = plot.options2,
+           output.filename = "ARHGAP29_gnomad_plot")
+```
+
+#ARHGAP29_inh_dnm.csv
+```{r}
+mutation3.csv <-file.path(file = "ARHGAP29_inh_dnm copy.csv")
+plot.options3 <- g3Lollipop.theme(theme.name = "ggplot2",
+                                  title.text = "ARHGAP29 (inh_dnm)")
+
+#changed Stop_Gain to Nonsense_Mutation, Nonsynonymous_Mutation to Missense_Mutation
+mutation3.dat <- readMAF(mutation3.csv,
+                        gene.symbol.col = "Hugo_Symbol",
+                        variant.class.col = "Mutation_Type",
+                        protein.change.col = "Protein_Change",
+                        sep = ",")
+```
+
+```{r}
+g3Lollipop(mutation3.dat,
+           gene.symbol = "ARHGAP29",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = plot.options3,
+           output.filename = "ARHGAP29_inh_dnm_plot")
+```
+
+#ARHGAP29_non-transmitted.csv
+```{r}
+mutation4.csv <-file.path(file = "ARHGAP29_non-transmitted copy.csv")
+plot.options4 <- g3Lollipop.theme(theme.name = "ggplot2",
+                                  title.text = "ARHGAP29 (non-transmitted)")
+
+#changed Nonsynonymous_Mutation to Missense_Mutation
+mutation4.dat <- readMAF(mutation4.csv,
+                        gene.symbol.col = "Hugo_Symbol",
+                        variant.class.col = "Mutation_Type",
+                        protein.change.col = "Protein_Change",
+                        sep = ",")
+```
+
+```{r}
+g3Lollipop(mutation4.dat,
+           gene.symbol = "ARHGAP29",
+           protein.change.col = "Protein_Change",
+           btn.style = "blue", 
+           plot.options = plot.options4,
+           output.filename = "ARHGAP29_nontrans_plot")
+```
+
+# all samples 
+
+## number of mutations vs. position 
+```{r}
+df<- read.csv("ARHGAP29.csv")
+
+#get number of mutations per position
+df2<- df %>%
+  group_by(position) %>%
+  mutate(count = n()) %>%
+  ungroup()
+
+#remove positions >= 1261
+df3 <- df2 %>%
+  filter(position <= 1261)
+
+
+# plot lollipop graph
+ggplot(df3, aes(position, y = count, color = Pop_ID)) + 
+  geom_segment(aes(x = position, xend = position, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5)+
+  labs(title = "ARHGAP29 All Mutations", y = "# of mutations", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+## negative y axis 
+```{r}
+df3_negative <-df3 %>%
+  transform(count = ifelse(Pop_ID == "gnomAD", count*-1, count)) %>%
+  transform(count = ifelse(Pop_ID == "ClinVar-Benign", count*-1, count)) %>%
+  transform(count = ifelse(Pop_ID == "nontransmitted", count*-1, count)) 
+
+#clean up mutation type
+df3_neg <-df3_negative
+df3_neg$Mutation_Type<- gsub("Stop_Gain", "Stop Gain/Start Lost", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("missense_variant,splice_region_variant", "Missense", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("missense_variant", "Missense", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("splice_region_variant,intron_variant", "Splice Region", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("Missense_Mutation", "Missense", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("frameshift insertion", "Frameshift insertion", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("nonsynonymous SNV", "Nonsynonymous", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("Splice_Site", "Splice Site", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("stopgain", "Stop Gain/Start Lost", df3_neg$Mutation_Type)
+df3_neg$Mutation_Type<- gsub("start_lost", "Stop Gain/Start Lost", df3_neg$Mutation_Type)
+
+
+
+
+ggplot(df3_neg, aes(position, y = count, color = Pop_ID)) + 
+  geom_segment(aes(x = position, xend = position, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5, aes(shape = Mutation_Type))+
+  labs(title = "ARHGAP29 Number of Mutations vs. Amino Acid Position", y = "Number of Mutations", x = "Amino Acid Position", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+## CADD vs. position 
+```{r}
+df3_neg$CADD <- as.integer(as.character(df3_neg$CADD))
+df3_neg2 <-df3_neg %>%
+  transform(CADD = ifelse(Pop_ID == "gnomAD", CADD*-1, CADD)) %>% ## change to negative gmoAD fo
+  transform(CADD = ifelse(Pop_ID == "ClinVar-Benign", CADD*-1, CADD)) %>%
+  transform(CADD = ifelse(Pop_ID == "nontransmitted", CADD*-1, CADD)) 
+
+ggplot(df3_neg2, aes(x = position, y = CADD, color = Pop_ID)) + 
+  geom_segment(aes(x = position, xend = position, y = 0, yend = CADD), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5, aes(shape = Mutation_Type))+
+  labs(title = "ARHGAP29 CADD score vs. Amino Acid Position", y = "CADD Score", x = "Amino Acid Position", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+```
+
+
+## number of mutations vs. position for grouped samples
+```{r}
+# grouping sample_IDs
+df4 <- df3 
+df4$Sample_ID <-gsub("unknown-inh-dnm", "Clinvar+inherited", df4$Sample_ID)
+df4$Sample_ID<-gsub("ClinVar", "Clinvar+inherited", df4$Sample_ID)
+df4$Sample_ID <-gsub("gnomAD", "nontransmitted", df4$Sample_ID)
+df4$Sample_ID <-gsub("nontransmitted", "gnomAD+nontransmitted", df4$Sample_ID)
+```
+
+```{r}
+# plot lollipop graph for grouped samples
+ggplot(df4, aes(Position, y = count, color = Sample_ID)) + 
+  geom_segment(aes(x = Position, xend = Position, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5)+
+  labs(title = "ARHGAP29 All Mutations, Grouped", y = "# of mutations", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(), 
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+
+## CADD score vs. base pair for all samples
+
+```{r}
+df_all <- read.csv("ARHGAP_all_data.csv")
+
+#change factor to integer
+df_all$CADD <- as.integer(as.character(df_all$CADD))
+
+# plot lollipop graph
+ggplot(df_all, aes(x = bp, y = CADD, color = Pop_ID)) + 
+  geom_segment(aes(x = bp, xend = bp, y = 0, yend = CADD), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5)+
+  labs(title = "ARHGAP29 CADD score vs. base pair", y = "CADD Score", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+```{r}
+# finding unique mutations 
+df_all_unique <- distinct(df_all, Protein_Change, .keep_all = TRUE)
+
+# plotting with only unique mutations
+ggplot(df_all_unique, aes(x = bp, y = CADD, color = Pop_ID)) + 
+  geom_segment(aes(x = bp, xend = bp, y = 0, yend = CADD), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5)+
+  labs(title = "ARHGAP29_Unique CADD score vs. base pair", y = "CADD Score", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+## number of mutations vs. base pair for 4 samples
+```{r}
+#get number of mutations per base pair 
+df_all_1<- df_all %>%
+  group_by(bp) %>%
+  mutate(count = n()) %>%
+  ungroup()
+
+df_all_1 <- df_all_1 %>%
+  filter(bp <=94210000)
+
+# plot lollipop graph
+ggplot(df_all_1, aes(x = bp, y = count, color = Pop_ID)) + 
+  geom_segment(aes(x = bp, xend = bp, y = 0, yend = count), alpha = 0.3)+
+  geom_point(size = 3, alpha = 0.3)+
+  labs(title = "ARHGAP29 # of mutations vs. base pair", y = "# of mutations", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+```{r}
+# only unique observations 
+df_all_1_unique <- distinct(df_all_1, Protein_Change, .keep_all = TRUE)
+
+# plot lollipop graph
+ggplot(df_all_1_unique, aes(x = bp, y = count, color = Pop_ID)) + 
+  geom_segment(aes(x = bp, xend = bp, y = 0, yend = count), alpha = 0.5)+
+  geom_point(size = 3, alpha = 0.5)+
+  labs(title = "ARHGAP29_Unique # of mutations vs. base pair", y = "# of mutations", color = "Sample")+
+  theme_light()+
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+
+
+
+
+
+
+
+
